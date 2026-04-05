@@ -52,9 +52,8 @@ COPY . .
 COPY --from=frontend /build/public/build ./public/build
 COPY --from=vendor /app/vendor ./vendor
 
-# Vendor kommt aus dem Composer-Stage — kein zweites install (vermeidet Platform-Check-Fehler).
-RUN composer dump-autoload --optimize --classmap-authoritative --no-interaction \
-    && mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache \
+# Vendor aus Composer-Stage ist schon mit optimize-autoloader gebaut — kein dump-autoload (classmap-authoritative bricht bei Laravel oft mit exit 1 ab).
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
