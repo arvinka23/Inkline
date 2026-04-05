@@ -65,6 +65,20 @@ return [
             'transport' => 'resend',
         ],
 
+        /*
+        | Try Resend first; if it rejects (e.g. onboarding@resend.dev only allows
+        | your account email), the same message is written to the log so signup
+        | still completes and you can copy the verification URL from storage/logs.
+        */
+        'resend_failover' => [
+            'transport' => 'failover',
+            'mailers' => [
+                'resend',
+                'log',
+            ],
+            'retry_after' => 60,
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
