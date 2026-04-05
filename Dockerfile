@@ -23,7 +23,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     libpq-dev \
     libzip-dev \
-    && docker-php-ext-install -j"$(nproc)" pdo_pgsql zip opcache \
+    libicu-dev \
+    libxml2-dev \
+    libonig-dev \
+    libcurl4-openssl-dev \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        curl \
+        dom \
+        intl \
+        mbstring \
+        opcache \
+        pcntl \
+        pdo_pgsql \
+        xml \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -38,7 +52,8 @@ COPY . .
 COPY --from=frontend /build/public/build ./public/build
 COPY --from=vendor /app/vendor ./vendor
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts \
+# Vendor kommt aus dem Composer-Stage — kein zweites install (vermeidet Platform-Check-Fehler).
+RUN composer dump-autoload --optimize --classmap-authoritative --no-interaction \
     && mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
