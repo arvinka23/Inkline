@@ -12,6 +12,10 @@ php artisan package:discover --ansi 2>/dev/null || true
 
 php artisan migrate --force --no-interaction
 
+php artisan db:seed --class=CategorySeeder --force --no-interaction
+
+php artisan storage:link --force --no-interaction 2>/dev/null || true
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

@@ -4,7 +4,7 @@
     </x-slot>
 
     <div class="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
-        <form method="post" action="{{ route('posts.update', $post) }}" class="space-y-6">
+        <form method="post" action="{{ route('posts.update', $post) }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')
             <div>
@@ -21,9 +21,27 @@
                 </select>
                 <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
             </div>
+            @if (filled($post->image))
+                <div class="rounded-lg border border-stone-200 p-3 dark:border-stone-600">
+                    <p class="mb-2 text-xs font-medium text-stone-500 dark:text-stone-400">{{ __('Current cover') }}</p>
+                    <img src="{{ $post->coverImageUrl(640, 360) }}" alt="" class="max-h-40 w-full rounded-md object-cover" />
+                </div>
+            @endif
             <div>
-                <x-input-label for="image" :value="__('Image URL (optional)')" />
-                <x-text-input id="image" name="image" type="url" class="mt-1 block w-full" :value="old('image', $post->image)" />
+                <x-input-label for="cover_image" :value="__('New cover image (optional)')" />
+                <input
+                    id="cover_image"
+                    name="cover_image"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    class="mt-1 block w-full text-sm text-stone-600 file:mr-4 file:rounded-md file:border-0 file:bg-amber-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-amber-700 dark:text-stone-300 dark:file:bg-amber-500 dark:hover:file:bg-amber-600"
+                />
+                <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">{{ __('JPEG, PNG, GIF or WebP, max 5 MB. Replaces URL or previous upload.') }}</p>
+                <x-input-error :messages="$errors->get('cover_image')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="image" :value="__('Or image URL (optional)')" />
+                <x-text-input id="image" name="image" type="text" class="mt-1 block w-full" :value="old('image', $post->image)" />
                 <x-input-error :messages="$errors->get('image')" class="mt-2" />
             </div>
             <div>

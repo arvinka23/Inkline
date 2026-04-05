@@ -7,6 +7,7 @@ use App\Models\post;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -116,6 +117,7 @@ class PostController extends Controller
             'content' => ['required', 'string'],
             'category_id' => ['required', 'exists:categories,id'],
             'image' => ['nullable', 'string', 'max:2048'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:5120'],
         ]);
 
         $slug = $this->makeUniqueSlugForUser($request->user(), Str::slug($validated['title']));
@@ -125,7 +127,7 @@ class PostController extends Controller
             'slug' => $slug,
             'content' => $validated['content'],
             'category_id' => $validated['category_id'],
-            'image' => $validated['image'] ?? null,
+            'image' => $this->imageForCreate($request, $validated),
             'published_at' => now(),
         ]);
 
@@ -153,6 +155,7 @@ class PostController extends Controller
             'content' => ['required', 'string'],
             'category_id' => ['required', 'exists:categories,id'],
             'image' => ['nullable', 'string', 'max:2048'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:5120'],
         ]);
 
         $slug = $post->slug;
@@ -166,7 +169,7 @@ class PostController extends Controller
             'slug' => $slug,
             'content' => $validated['content'],
             'category_id' => $validated['category_id'],
-            'image' => $validated['image'] ?? null,
+            'image' => $this->imageForUpdate($request, $post, $validated),
             'published_at' => $post->published_at ?? now(),
         ]);
 
@@ -202,5 +205,57 @@ class PostController extends Controller
             }
             $candidate = $base.'-'.(++$n);
         } while (true);
+    }
+
+    /**
+     * Uploaded cover wins over optional image URL; stored under storage/app/public/post-covers.
+     */
+    private function imageForCreate(Request $request, array $validated): ?string
+    {
+        if ($request->hasFile('cover_image')) {
+            return '/storage/'.$request->file('cover_image')->store('post-covers', 'public');
+        }
+
+        $url = trim((string) ($validated['image'] ?? ''));
+
+        return $url !== '' ? $url : null;
+    }
+
+    private function imageForUpdate(Request $request, post $post, array $validated): ?string
+    {
+        if ($request->hasFile('cover_image')) {
+            $this->deleteStoredCoverIfOwned($post->image);
+
+            return '/storage/'.$request->file('cover_image')->store('post-covers', 'public');
+        }
+
+        $url = trim((string) ($validated['image'] ?? ''));
+        if ($url === '') {
+            $this->deleteStoredCoverIfOwned($post->image);
+
+            return null;
+        }
+
+        if ($post->image !== $url) {
+            $this->deleteStoredCoverIfOwned($post->image);
+        }
+
+        return $url;
+    }
+
+    private function deleteStoredCoverIfOwned(?string $path): void
+    {
+        if ($path === null || $path === '') {
+            return;
+        }
+
+        if (! str_starts_with($path, '/storage/post-covers/')) {
+            return;
+        }
+
+        $relative = ltrim(Str::after($path, '/storage/'), '/');
+        if ($relative !== '') {
+            Storage::disk('public')->delete($relative);
+        }
     }
 }

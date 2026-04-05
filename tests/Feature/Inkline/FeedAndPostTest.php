@@ -3,6 +3,8 @@
 use App\Models\category;
 use App\Models\post;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('guest sees published posts on the home feed', function () {
     $author = User::factory()->create();
@@ -72,6 +74,27 @@ test('verified user can create and publish a post', function () {
     expect($post)->not->toBeNull()
         ->and($post->user_id)->toBe($user->id)
         ->and($post->published_at)->not->toBeNull();
+});
+
+test('verified user can publish a post with uploaded cover image', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+    $cat = category::factory()->create();
+    $file = UploadedFile::fake()->image('cover.jpg', 640, 400);
+
+    $this->actingAs($user)
+        ->post(route('posts.store'), [
+            'title' => 'Post With Upload',
+            'content' => 'Body text.',
+            'category_id' => $cat->id,
+            'cover_image' => $file,
+        ])
+        ->assertRedirect();
+
+    $post = post::query()->where('title', 'Post With Upload')->firstOrFail();
+    expect($post->image)->toStartWith('/storage/post-covers/');
+    $relative = ltrim(substr($post->image, strlen('/storage/')), '/');
+    Storage::disk('public')->assertExists($relative);
 });
 
 test('user cannot delete another users post', function () {
