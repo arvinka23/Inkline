@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+@layer components {
+    /* One surface = paired bg + text (avoids light text on white when dark: bg fails to apply) */
+    .inkline-article-surface {
+        @apply rounded-2xl border border-stone-200 bg-white px-6 py-8 text-stone-900 shadow-sm sm:px-10 sm:py-10;
+        @apply dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:shadow-none;
+    }
+}
