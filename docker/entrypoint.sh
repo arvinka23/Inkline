@@ -5,6 +5,9 @@ cd /var/www/html
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R ug+rwx storage bootstrap/cache 2>/dev/null || true
 
+# Frische Config aus Render-Env (kein alter config cache)
+php artisan config:clear 2>/dev/null || true
+
 php artisan package:discover --ansi 2>/dev/null || true
 
 php artisan migrate --force --no-interaction

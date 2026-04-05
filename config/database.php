@@ -17,7 +17,10 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    // Ohne DB_CONNECTION: wenn DATABASE_URL gesetzt ist (Render/Postgres), automatisch pgsql
+    'default' => filled(env('DB_CONNECTION'))
+        ? env('DB_CONNECTION')
+        : ((env('DATABASE_URL') ?: env('DB_URL')) ? 'pgsql' : 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
@@ -86,8 +89,8 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            // Render, Railway, Heroku setzen DATABASE_URL; lokal oft DB_URL in .env
-            'url' => env('DATABASE_URL', env('DB_URL')),
+            // Render setzt DATABASE_URL — leerer String darf nicht den Fallback blockieren (env('A', 'b') nutzt b nur wenn A fehlt)
+            'url' => env('DATABASE_URL') ?: env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
